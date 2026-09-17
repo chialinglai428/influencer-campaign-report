@@ -1,5 +1,115 @@
 # influencer-campaign-report
 
+**[English](#english) | [繁體中文](#繁體中文)**
+
+## English
+
+An AI-assisted workflow that turns Instagram and Facebook creator analytics screenshots into a consolidated Excel campaign report. It combines a Claude skill for screenshot interpretation and user confirmation with a Python script for workbook generation.
+
+### The marketing problem
+
+Campaign reporting often means collecting screenshots from multiple creators, transcribing metrics, and assembling a spreadsheet by hand. Different analytics layouts and inconsistent metric labels make that process harder to repeat reliably.
+
+This project defines a reusable reporting workflow: extract the figures, confirm them with the marketer, and generate a structured workbook with formulas.
+
+### Workflow
+
+1. Provide post or Reel insights screenshots, profile screenshots, manually entered metrics, or a combination.
+2. Claude interprets the inputs and organizes the metrics for each creator.
+3. Review and confirm each creator's figures before they are added.
+4. The Python report builder generates an `.xlsx` file with creator rows, totals, and engagement-rate formulas.
+
+Screenshot interpretation is handled by Claude; the Python script accepts structured data and builds the workbook. This is a workflow with human review, not a standalone OCR application.
+
+### Features
+
+- Combines creator profile and post insights data into a single row.
+- Records followers, reach, likes, comments, shares, saves, and optional link clicks.
+- Uses editable Excel formulas for engagement rates and totals.
+- Calculates the campaign engagement rate using reach weighting rather than a simple average of creator rates.
+- Leaves missing link-click values blank.
+- Produces a formatted workbook with Traditional Chinese column labels.
+
+### Calculation rules
+
+```text
+Creator engagement rate = (likes + comments + shares) / reach
+Campaign engagement rate = sum(likes + comments + shares) / sum(reach)
+```
+
+Here, shares include reposts and sends. Saves are recorded separately and are not included in this project's engagement-rate formula.
+
+Reach is preferred as the denominator. If only view counts are available, the skill instructs Claude to disclose that they are being used as a proxy. Views and unique reach are not equivalent, so review denominator consistency before comparing creators.
+
+Summed reach and follower counts are not deduplicated audiences. Inputs should have positive reach values; the current builder does not guard against division by zero.
+
+### Getting started
+
+Use a Claude environment that supports skills, image inputs, and Python execution. Place this repository in your skills directory, for example:
+
+```text
+~/.claude/skills/influencer-campaign-report/
+```
+
+Install the report builder's Python dependency:
+
+```bash
+python -m pip install openpyxl
+```
+
+Ask Claude:
+
+> Help me consolidate these creators' Instagram campaign results into an Excel report.
+
+Then provide the screenshots or numbers and confirm the extracted figures.
+
+The skill also references a formula-recalculation utility supplied by its original host environment. That utility is not included in this repository. In another environment, use an available spreadsheet engine to recalculate and inspect the workbook; `openpyxl` writes formulas but does not evaluate them.
+
+### Use the report builder directly
+
+Run this example from the repository root:
+
+```python
+from scripts.build_report import build
+
+# 合成範例資料，非真實活動成效。
+rows = [
+    {
+        "name": "Creator A",
+        "followers": 15000,
+        "reach": 10000,
+        "likes": 1000,
+        "comments": 50,
+        "shares": 150,
+        "saves": 80,
+        "link_clicks": 100,
+    },
+    {
+        "name": "Creator B",
+        "followers": 8000,
+        "reach": 5000,
+        "likes": 200,
+        "comments": 20,
+        "shares": 30,
+        "saves": 40,
+        "link_clicks": None,
+    },
+]
+
+build(rows, "campaign_report.xlsx")
+```
+
+For this synthetic example, creator engagement rates are 12.0% and 5.0%; the reach-weighted campaign rate is approximately 9.7%. Open the workbook in a spreadsheet application to calculate and view the formula results.
+
+### Project files
+
+- [SKILL.md](SKILL.md): input interpretation, confirmation, metric rules, and reporting workflow.
+- [scripts/build_report.py](scripts/build_report.py): Python workbook generator using `openpyxl`.
+
+---
+
+## 繁體中文
+
 網紅專案結案數據整理 skill。把多位網紅的 IG/FB 貼文洞察報告或 Reel 洞察報告截圖，轉換成一份含加總與加權平均互動率的成效總表（xlsx）。
 
 ## 功能
@@ -47,3 +157,4 @@ influencer-campaign-report/
 └── scripts/
     └── build_report.py         # xlsx 報表產生器
 ```
+
